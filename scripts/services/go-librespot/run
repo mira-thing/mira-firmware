@@ -19,4 +19,11 @@ if [ ! -f "$CONFIG_DIR/config.yml" ]; then
 fi
 rm -f "$CONFIG_DIR/lockfile"
 
+# primary lyrics provider config
+if [ -s /etc/go-librespot/lp.env ]; then
+  set -a
+  . /etc/go-librespot/lp.env
+  set +a
+fi
+
 exec /usr/sbin/go-librespot --config_dir "$CONFIG_DIR"

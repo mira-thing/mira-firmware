@@ -24,7 +24,7 @@ RUN curl -L https://github.com/pengutronix/genimage/archive/refs/tags/v18.tar.gz
 COPY resources/ /work/resources/
 COPY scripts/ /work/scripts/
 COPY docker-entrypoint.sh build.sh .build-number /work/
-COPY go-librespot-armv6 ui.zip go-librespot-config.yml /work/
+COPY go-librespot-armv6 ui.zip go-librespot-config.yml lp.env /work/
 
 WORKDIR /work
 

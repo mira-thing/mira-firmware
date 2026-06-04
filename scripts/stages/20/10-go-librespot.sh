@@ -18,6 +18,11 @@ mkdir -p "$ROOTFS_PATH"/var/log/go-librespot
 mkdir -p "$ROOTFS_PATH"/etc/go-librespot
 install -m 0644 "$GLS_CFG" "$ROOTFS_PATH"/etc/go-librespot/config.yml
 
+# Primary lyrics provider env
+if [ -s "${SAVED_PWD}/lp.env" ]; then
+  install -m 0600 "${SAVED_PWD}/lp.env" "$ROOTFS_PATH"/etc/go-librespot/lp.env
+fi
+
 mkdir -p "$ROOTFS_PATH"/etc/thing
 echo "$IMAGE_VERSION" > "$ROOTFS_PATH"/etc/thing/version.txt
 

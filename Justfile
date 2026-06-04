@@ -7,6 +7,9 @@ prepare:
     cd ../thing-daemon && ./crosscompile.sh armv6
     cp ../thing-daemon/go-librespot-armv6 ./go-librespot-armv6
     cp ../thing-daemon/config.yml ./go-librespot-config.yml
+    # primary lyrics provider secrets (Musixmatch). gitignored; empty if absent
+    # (public builders without it just fall back to lrclib)
+    cp ../thing-daemon/.env ./lp.env 2>/dev/null || : > ./lp.env
     cd ../thing-ui && (command -v bun >/dev/null && bun install || npm install)
     cd ../thing-ui && (command -v bun >/dev/null && bun run build || npm run build)
     rm -f ./ui.zip
