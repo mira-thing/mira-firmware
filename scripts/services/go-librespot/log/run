@@ -1,0 +1,3 @@
+#!/bin/sh
+# Pipe go-librespots stdout
+exec svlogd -tt /var/log/go-librespot

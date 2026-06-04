@@ -1,0 +1,22 @@
+#!/bin/sh
+export HOME=/root
+exec 2>&1
+sv check usb-gadget > /dev/null || exit 1
+
+# Wait for the clock floor service so the system clock is past 2025 before we attempt anything TLS
+# Without this gate the daemon races clock_floor
+sv check clock_floor > /dev/null 2>&1
+
+# Wait for the BT chip init service to be up so /dev/ttyS1 is attached and
+# bluetoothd can register on D-Bus
+sv check bluetooth_adapter > /dev/null 2>&1
+
+# NTP gate moved inside the daemon
+CONFIG_DIR="/var/local/etc/go-librespot"
+mkdir -p "$CONFIG_DIR"
+if [ ! -f "$CONFIG_DIR/config.yml" ]; then
+  cp /etc/go-librespot/config.yml "$CONFIG_DIR/config.yml"
+fi
+rm -f "$CONFIG_DIR/lockfile"
+
+exec /usr/sbin/go-librespot --config_dir "$CONFIG_DIR"

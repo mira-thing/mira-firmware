@@ -1,5 +1,14 @@
 /cache/
 /output/
 
-/nocturned
-/nocturned.sha256
+# build artifacts dropped in by `just prepare`
+/go-librespot-armv6
+/go-librespot-config.yml
+/ui.zip
+
+# auto-incrementing patch build-number (local iteration state)
+/.build-number
+
+# asset generators — kept out of VC; only their committed outputs
+# (resources/flash/logo.dump, resources/config/background.png) are tracked
+/internal/

@@ -1,0 +1,50 @@
+#!/bin/sh
+#
+# clock_floor: keeps the system clock from rewinding past a sensible date
+# on every cold boot.
+
+exec 2>&1
+
+FLOOR_STR="2026-05-18 00:00:00"
+FLOOR_EPOCH=1779062400
+
+SAVED=/var/local/lib/clock_saved
+SAVE_INTERVAL=300
+
+mkdir -p "$(dirname "$SAVED")"
+
+target_epoch=$FLOOR_EPOCH
+target_str=$FLOOR_STR
+
+if [ -f "$SAVED" ]; then
+  saved=$(cat "$SAVED" 2>/dev/null)
+  # Accept only pure digits
+  case "$saved" in
+    ''|*[!0-9]*) ;;
+    *)
+      if [ "$saved" -gt "$target_epoch" ]; then
+        target_epoch=$saved
+        # Attempt to format saved epoch as a string for `date -s`
+        target_str=$(date -d "@$saved" +"%Y-%m-%d %H:%M:%S" 2>/dev/null) || target_str=""
+      fi
+      ;;
+  esac
+fi
+
+current_epoch=$(date +%s)
+if [ "$current_epoch" -lt "$target_epoch" ]; then
+  if [ -n "$target_str" ]; then
+    date -s "$target_str"
+  else
+    date -s "@$target_epoch"
+  fi
+  echo "clock_floor: clock set to $(date) (was behind target)"
+else
+  echo "clock_floor: clock already at $(date), no action"
+fi
+
+# Periodic save loop
+while true; do
+  sleep "$SAVE_INTERVAL"
+  date +%s > "$SAVED"
+done

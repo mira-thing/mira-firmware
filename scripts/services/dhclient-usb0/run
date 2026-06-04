@@ -1,0 +1,46 @@
+#!/bin/sh
+#
+# dhclient-usb0 - additive DHCP on usb0 to support Windows ICS and different IPs.
+
+exec 2>&1
+
+# Wait for usb0 to exist
+i=0
+while [ "$i" -lt 60 ]; do
+  if [ -d /sys/class/net/usb0 ]; then
+    break
+  fi
+  sleep 1
+  i=$((i + 1))
+done
+
+if [ ! -d /sys/class/net/usb0 ]; then
+  echo "dhclient-usb0: usb0 never appeared after 60s, sleeping before restart"
+  sleep 30
+  exit 1
+fi
+
+# Wait for usb0 to go UP
+i=0
+while [ "$i" -lt 300 ]; do
+  state=$(cat /sys/class/net/usb0/operstate 2>/dev/null)
+  if [ "$state" = "up" ]; then
+    break
+  fi
+  sleep 1
+  i=$((i + 1))
+done
+
+if ! ip link show usb0 2>/dev/null | grep -q "state UP"; then
+  echo "dhclient-usb0: usb0 still not UP after 5min, exiting for runit restart"
+  exit 1
+fi
+
+# Brief settle so NetworkManager finishes applying the static IP
+sleep 3
+
+# Foreground (-d) so runit supervises restarts
+exec dhclient -d \
+  -pf /run/dhclient.usb0.pid \
+  -lf /run/dhclient.usb0.leases \
+  usb0

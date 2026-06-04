@@ -1,0 +1,21 @@
+#!/bin/sh
+#
+# dhclient exit hook: write nameservers from the DHCP lease into resolv.conf
+
+case "$reason" in
+    BOUND|RENEW|REBIND|REBOOT)
+        if [ -n "$new_domain_name_servers" ]; then
+            tmp=/var/local/etc/resolv.conf.new
+            : > "$tmp"
+            if [ -n "$new_domain_search" ]; then
+                echo "search $new_domain_search" >> "$tmp"
+            elif [ -n "$new_domain_name" ]; then
+                echo "search $new_domain_name" >> "$tmp"
+            fi
+            for ns in $new_domain_name_servers; do
+                echo "nameserver $ns" >> "$tmp"
+            done
+            mv "$tmp" /var/local/etc/resolv.conf
+        fi
+        ;;
+esac

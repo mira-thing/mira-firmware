@@ -4,11 +4,12 @@ set -e
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Image build config
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-: "${NOCTURNE_IMAGE_VERSION:="v3.0.0"}"
-
-: "${NOCTURNE_UI_TAG:="main"}"
-: "${NOCTURNED_TAG:="v1.0.16"}"
-: "${WINGMAN_TAG:="v1.0.1"}"
+# Versioning: MAJOR/MINOR by hand. PATCH is an auto-incrementing
+# makes for build each build to be easily identifiable during iteration
+: "${VERSION_MAJOR:=0}"
+: "${VERSION_MINOR:=4}"
+: "${VERSION_PATCH:=$(cat .build-number 2> /dev/null || echo 0)}"
+: "${IMAGE_VERSION:="v${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}"}"
 
 : "${VOID_BUILD:="20250202"}"
 : "${STATIC_WEB_SERVER_VERSION:="v2.38.0"}"
@@ -16,8 +17,8 @@ set -e
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # System config
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-: "${DEFAULT_HOSTNAME:="nocturne"}"
-: "${DEFAULT_ROOT_PASSWORD:="nocturne"}"
+: "${DEFAULT_HOSTNAME:="thing"}"
+: "${DEFAULT_ROOT_PASSWORD:="thing"}"
 : "${DEFAULT_SERVICES:=""}"
 
 : "${SIZE_ROOT_FS:="516M"}"
@@ -39,7 +40,6 @@ SAVED_PWD="$(pwd)"
 
 WORK_PATH=$(mktemp -d)
 export ROOTFS_PATH="${WORK_PATH}/rootfs"
-export UPDATE_PATH="${WORK_PATH}/update"
 IMAGE_PATH="${WORK_PATH}/img"
 export OUTPUT_PATH="${SAVED_PWD}/output"
 export CACHE_PATH="${SAVED_PWD}/cache"
@@ -49,7 +49,7 @@ export HELPERS_PATH="${SAVED_PWD}/scripts/build-helpers"
 export RES_PATH="${SAVED_PWD}/resources"
 DEF_STAGE_PATH="${SAVED_PWD}/scripts/stages"
 
-mkdir -p "$IMAGE_PATH" "$ROOTFS_PATH" "$OUTPUT_PATH" "$CACHE_PATH" "$UPDATE_PATH"
+mkdir -p "$IMAGE_PATH" "$ROOTFS_PATH" "$OUTPUT_PATH" "$CACHE_PATH"
 
 export XBPS_ARCH="armv7l"
 
@@ -103,7 +103,7 @@ run_stage_scripts() {
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Stage 00 - Prepare root FS
 # Stage 10 - Configure system
-# Stage 20 - Nocturne configuration
+# Stage 20 - Application configuration
 # Stage 30 - Cleanup
 # Stage 40 - Create images
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

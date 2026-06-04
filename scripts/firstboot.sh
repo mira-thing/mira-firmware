@@ -11,7 +11,7 @@ firstboot=0
 # shellcheck disable=SC1001
 for i in $(cat /proc/cmdline); do
   case $i in
-    nocturne.firstboot\=*)
+    thing.firstboot\=*)
       firstboot=$(get_opt "$i")
       ;;
   esac
