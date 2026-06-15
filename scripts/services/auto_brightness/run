@@ -1,6 +1,47 @@
 #!/bin/sh
+#
+# brightness logic stuff: stock sp-als-backlight ALS loop by default
+# optional fixed manual level driven by the UI
+#
+# /var/local/etc/backlight.conf is transcribed by the go-librespot daemon when
+# the UI settings change (the daemon also restarts this service so we can go back to auto brightness)
+#
+# Backlight raw scale is inverted (1 brightest, 254 dim (w flicker), 0 and 255 off)
 
 exec 2>&1
 sv check weston > /dev/null || exit 1
 
-exec /usr/bin/sp-als-backlight > /dev/null 2>&1
+CONF=/var/local/etc/backlight.conf
+AUTO=1 BRIGHTNESS=8
+[ -r "$CONF" ] && . "$CONF" 2> /dev/null
+
+if [ "$AUTO" != "0" ]; then
+  # stock behavior
+  exec /usr/bin/sp-als-backlight > /dev/null 2>&1
+fi
+
+# manual override
+BL=""
+for f in /sys/class/backlight/*/brightness; do
+  [ -e "$f" ] && BL="$f" && break
+done
+[ -n "$BL" ] || { echo "auto_brightness: no backlight node, exiting"; exit 1; }
+
+while :; do
+  AUTO=1 BRIGHTNESS=8
+  [ -r "$CONF" ] && . "$CONF" 2> /dev/null
+  # runit restarts us into the stock branch
+  [ "$AUTO" != "0" ] && exit 0
+
+  # re-applied every tick so the level survives suspend/resume
+  awk -v b="$BRIGHTNESS" '
+    function clamp(x, lo, hi) { return x < lo ? lo : (x > hi ? hi : x) }
+    BEGIN {
+      pmin = exp(log(0.005) / 2.5)              # 0.5% luminance at slider 1
+      p = pmin + (1 - pmin) * (clamp(b, 1, 10) - 1) / 9
+      light = exp(2.5 * log(p))                 # Stevens-ish power law
+      printf "%d\n", clamp(1 + (1 - light) * 244, 1, 255)
+    }' > "$BL" 2> /dev/null
+
+  sleep 2
+done
