@@ -1,8 +1,26 @@
 #!/bin/sh
 #
-# dhclient-usb0 - additive DHCP on usb0 to support Windows ICS and different IPs.
+# dhclient-usb0 
+#
+# Additive DHCP on usb0 to support Windows ICS and different IPs
+#
+# Supervises the link as well as dhclient:
+#  - if usb0 bounces (PC reboot/sleep/replug) dhclient is restarted so it
+#    re-discovers immediately
+#  - if the link is up but there is still no internet, bounce the USB gadget
 
 exec 2>&1
+
+GADGET_UDC=/sys/kernel/config/usb_gadget/g1/UDC
+PIDFILE=/run/dhclient.usb0.pid
+BOUNCE_STATE=/run/dhclient-usb0.bounce
+NO_NET_BOUNCE_AFTER=90
+MAX_BOUNCES=3 
+ICS_GW=192.168.137.1
+ICS_GRACE=15
+
+# monotonic seconds since boot
+mono() { awk '{print int($1)}' /proc/uptime 2>/dev/null || echo 0; }
 
 # Wait for usb0 to exist
 i=0
@@ -39,8 +57,160 @@ fi
 # Brief settle so NetworkManager finishes applying the static IP
 sleep 3
 
-# Foreground (-d) so runit supervises restarts
-exec dhclient -d \
-  -pf /run/dhclient.usb0.pid \
+# kill any dhclient leaked by a previous incarnation of this service
+if [ -f "$PIDFILE" ]; then
+  OLD_PID=$(cat "$PIDFILE" 2>/dev/null)
+  [ -n "$OLD_PID" ] && kill "$OLD_PID" 2>/dev/null
+fi
+
+# carry the counter only across our own bounces
+BOUNCES=0
+if [ -f "$BOUNCE_STATE" ]; then
+  BOUNCES=$(cut -d' ' -f1 "$BOUNCE_STATE" 2>/dev/null)
+  LAST_BOUNCE=$(cut -d' ' -f2 "$BOUNCE_STATE" 2>/dev/null)
+  case "$BOUNCES" in '' | *[!0-9]*) BOUNCES=0 ;; esac
+  case "$LAST_BOUNCE" in '' | *[!0-9]*) LAST_BOUNCE=0 ;; esac
+  NOW=$(mono)
+  if [ $((NOW - LAST_BOUNCE)) -gt 300 ]; then
+    BOUNCES=0
+  fi
+fi
+
+dhclient -d \
+  -pf "$PIDFILE" \
   -lf /run/dhclient.usb0.leases \
-  usb0
+  usb0 &
+DHCLIENT_PID=$!
+
+trap 'kill "$DHCLIENT_PID" 2>/dev/null; exit 0' TERM INT
+
+# Re enumerate the gadget on the host
+bounce_gadget() {
+  UDC_DEVICE=$(cat "$GADGET_UDC" 2>/dev/null)
+  if [ -z "$UDC_DEVICE" ]; then
+    UDC_DEVICE=$(ls -1 /sys/class/udc/ 2>/dev/null | head -n 1)
+  fi
+  if [ -z "$UDC_DEVICE" ]; then
+    echo "dhclient-usb0: no UDC found, cannot bounce gadget"
+    return 1
+  fi
+  BOUNCES=$((BOUNCES + 1))
+  echo "dhclient-usb0: no internet for ${NO_NET_SECS}s with link up, bouncing USB gadget (attempt $BOUNCES/$MAX_BOUNCES)"
+  echo "$BOUNCES $(mono)" > "$BOUNCE_STATE"
+  echo "" > "$GADGET_UDC" 2>/dev/null
+  sleep 2
+  echo "$UDC_DEVICE" > "$GADGET_UDC" 2>/dev/null
+}
+
+# Is the Windows-ICS gateway present on the link?
+#
+# Probe at L2 with arping to bypass the public firewall profile
+gateway_up() {
+  if command -v arping > /dev/null 2>&1; then
+    arping -q -f -w 3 -I usb0 "$ICS_GW" > /dev/null 2>&1
+    return $?
+  fi
+  # arping unavailable
+  ping -c 1 -W 2 "$ICS_GW" > /dev/null 2>&1
+}
+
+# Do we actually have internet? ICMP first -> fall back to a TCP/80
+have_internet() {
+  ping -c 1 -W 2 1.1.1.1 > /dev/null 2>&1 && return 0
+  curl -s -m 3 -o /dev/null http://1.1.1.1 > /dev/null 2>&1
+}
+
+# Tear down a previous ICS self-assign so the static 172.16.42.x route becomes the default 
+revert_ics_fallback() {
+  ip route del default via "$ICS_GW" dev usb0 metric 100 2>/dev/null
+  [ -n "$ICS_HOST" ] && ip addr del "192.168.137.$ICS_HOST/24" dev usb0 2>/dev/null
+  ICS_APPLIED=0
+  ICS_HOST=""
+  echo "dhclient-usb0: ICS gateway $ICS_GW gone; reverted self-assign so the static route takes over"
+}
+
+# Static ICS fallback.
+#
+# Windows ICS ALWAYS self-assigns the PC the fixed gateway 192.168.137.1
+# But the dhcp server can be dead on devices running WSL2/Docker Desktop/Hyper-V
+# so we never get an offer
+apply_ics_fallback() {
+  # Pick a free host octet
+  host=2
+  if command -v arping > /dev/null 2>&1; then
+    n=2
+    while [ "$n" -le 9 ]; do
+      # arping -D exits 0 when NO reply is seen (address free)
+      if arping -D -q -I usb0 -c 2 -w 2 "192.168.137.$n" > /dev/null 2>&1; then
+        host=$n
+        break
+      fi
+      n=$((n + 1))
+    done
+  fi
+
+  # Assign on-subnet so the connected route exists
+  ip addr add "192.168.137.$host/24" dev usb0 2>/dev/null
+  if gateway_up; then
+    ip route replace default via "$ICS_GW" dev usb0 metric 100 2>/dev/null
+    ICS_HOST=$host
+    echo "dhclient-usb0: no DHCP lease but ICS gateway $ICS_GW is up; self-assigned 192.168.137.$host + default route (Windows ICS w/ dead DHCP server)"
+    return 0
+  fi
+
+  # not a Windows ICS host
+  ip addr del "192.168.137.$host/24" dev usb0 2>/dev/null
+  return 1
+}
+
+NO_NET_SECS=0
+ICS_APPLIED=0
+ICS_HOST=""
+while true; do
+  sleep 5
+
+  if ! kill -0 "$DHCLIENT_PID" 2>/dev/null; then
+    echo "dhclient-usb0: dhclient exited, restarting service"
+    exit 1
+  fi
+
+  state=$(cat /sys/class/net/usb0/operstate 2>/dev/null)
+  if [ "$state" != "up" ]; then
+    echo "dhclient-usb0: usb0 link went ${state:-away}, restarting for a fresh DISCOVER"
+    kill "$DHCLIENT_PID" 2>/dev/null
+    wait "$DHCLIENT_PID" 2>/dev/null
+    exit 1
+  fi
+
+  if have_internet; then
+    NO_NET_SECS=0
+    if [ "$BOUNCES" -ne 0 ]; then
+      BOUNCES=0
+      echo "0 0" > "$BOUNCE_STATE"
+    fi
+  else
+    NO_NET_SECS=$((NO_NET_SECS + 5))
+
+    # If we self-assigned for ICS but the ICS gateway has since stopped drop the self-assign
+    if [ "$ICS_APPLIED" = 1 ] && [ "$NO_NET_SECS" -ge "$ICS_GRACE" ] && ! gateway_up; then
+      revert_ics_fallback
+      NO_NET_SECS=0
+      continue
+    fi
+
+    # try static ICS fallback first
+    if [ "$ICS_APPLIED" = 0 ] && [ "$NO_NET_SECS" -ge "$ICS_GRACE" ]; then
+      if apply_ics_fallback; then
+        ICS_APPLIED=1
+        NO_NET_SECS=0
+        continue
+      fi
+    fi
+
+    if [ "$NO_NET_SECS" -ge "$NO_NET_BOUNCE_AFTER" ] && [ "$BOUNCES" -lt "$MAX_BOUNCES" ]; then
+      bounce_gadget
+      NO_NET_SECS=0
+      # the bounce drops the link
+    fi
+  fi
+done
