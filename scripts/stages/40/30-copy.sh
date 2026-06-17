@@ -21,4 +21,4 @@ cp "$CUSTOM_BOOT" "$IMAGE_PATH"/boot_b.dump
 cp "$RES_PATH"/flash/env.txt "$RES_PATH"/flash/logo.dump "$IMAGE_PATH"/
 
 cd "$IMAGE_PATH"/ || exit 1
-zip -r9 "$OUTPUT_PATH"/thing_firmware_"$IMAGE_VERSION".zip .
+zip -r9 "$OUTPUT_PATH"/mira_firmware_"$IMAGE_VERSION".zip .

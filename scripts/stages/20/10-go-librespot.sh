@@ -23,7 +23,7 @@ if [ -s "${SAVED_PWD}/lp.env" ]; then
   install -m 0600 "${SAVED_PWD}/lp.env" "$ROOTFS_PATH"/etc/go-librespot/lp.env
 fi
 
-mkdir -p "$ROOTFS_PATH"/etc/thing
-echo "$IMAGE_VERSION" > "$ROOTFS_PATH"/etc/thing/version.txt
+mkdir -p "$ROOTFS_PATH"/etc/mira
+echo "$IMAGE_VERSION" > "$ROOTFS_PATH"/etc/mira/version.txt
 
 DEFAULT_SERVICES="${DEFAULT_SERVICES} go-librespot"

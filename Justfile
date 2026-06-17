@@ -4,16 +4,16 @@
 prepare:
     printf '%s\n' "$(( $(cat .build-number 2> /dev/null || echo 0) + 1 ))" > .build-number
     @echo ">> build v0.4.$(cat .build-number)   (edit VERSION_MAJOR/VERSION_MINOR in build.sh to change the v0.4 part)"
-    cd ../thing-daemon && ./crosscompile.sh armv6
-    cp ../thing-daemon/go-librespot-armv6 ./go-librespot-armv6
-    cp ../thing-daemon/config.yml ./go-librespot-config.yml
+    cd ../mira-daemon && ./crosscompile.sh armv6
+    cp ../mira-daemon/go-librespot-armv6 ./go-librespot-armv6
+    cp ../mira-daemon/config.yml ./go-librespot-config.yml
     # primary lyrics provider secrets (Musixmatch). gitignored; empty if absent
     # (public builders without it just fall back to lrclib)
-    cp ../thing-daemon/.env ./lp.env 2>/dev/null || : > ./lp.env
-    cd ../thing-ui && (command -v bun >/dev/null && bun install || npm install)
-    cd ../thing-ui && (command -v bun >/dev/null && bun run build || npm run build)
+    cp ../mira-daemon/.env ./lp.env 2>/dev/null || : > ./lp.env
+    cd ../mira-ui && (command -v bun >/dev/null && bun install || npm install)
+    cd ../mira-ui && (command -v bun >/dev/null && bun run build || npm run build)
     rm -f ./ui.zip
-    cd ../thing-ui/dist && zip -r9 {{justfile_directory()}}/ui.zip .
+    cd ../mira-ui/dist && zip -r9 {{justfile_directory()}}/ui.zip .
 
 run: prepare
     sudo ./build.sh

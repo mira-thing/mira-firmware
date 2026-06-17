@@ -1,4 +1,4 @@
-# Thing firmware
+# Mira firmware
 
 Custom firmware for the Spotify Car Thing that runs as a standalone Spotify observer + controller. No companion app required.
 
@@ -38,9 +38,9 @@ just docker-run
 
 ## related projects
 
-- [`thing-ui/`](../thing-ui) - Vite + React UI
-- [`thing-daemon/`](../thing-daemon) - daemon
-- [`thing-firmware/`](.) - image builder
+- [`mira-ui/`](../mira-ui) - Vite + React UI
+- [`mira-daemon/`](../mira-daemon) - daemon
+- [`mira-firmware/`](.) - image builder
 - [`thing-kernel/`](../thing-kernel) - patched kernel (rotary-encoder fix), GPL-2.0
 
 ## Credits

@@ -22,8 +22,8 @@ echo 0x0100 > "${usbGadgetDir}"/bcdDevice                                       
 echo 0x0200 > "${usbGadgetDir}"/bcdUSB                                                                                                                  # USB Version
 mkdir -p "${usbGadgetDir}"/strings/0x409                                                                                                                # English strings
 cat /sys/class/efuse/usid > "${usbGadgetDir}"/strings/0x409/serialnumber 2> /dev/null || echo "12345678" > "${usbGadgetDir}"/strings/0x409/serialnumber # Serial Number
-echo "Vanta Labs" > "${usbGadgetDir}"/strings/0x409/manufacturer                                                                                        # Manufacturer string
-echo "thing" > "${usbGadgetDir}"/strings/0x409/product                                                                                                  # Device string
+echo "Mira Project" > "${usbGadgetDir}"/strings/0x409/manufacturer                                                                                        # Manufacturer string
+echo "Mira" > "${usbGadgetDir}"/strings/0x409/product                                                                                                 # Device string
 
 # Convinces Windows to properly load RNDIS driver
 echo 1 > "${usbGadgetDir}"/os_desc/use # Tells gadget to use values in os_desc
@@ -46,7 +46,15 @@ sleep 1
 ln -s "${usbGadgetDir}"/functions/rndis.usb0 "${usbGadgetDir}"/configs/c.1
 ln -s "${usbGadgetDir}"/configs/c.1 "${usbGadgetDir}"/os_desc
 
-# CDC ECM - Mac/Linux path. Staged as of rn
+# CDC ECM path
+mkdir -p "${usbGadgetDir}"/functions/ecm.usb0
+echo "a0:b1:c2:d3:e4:02" > "${usbGadgetDir}"/functions/ecm.usb0/dev_addr
+echo "a0:b1:c2:d3:e4:03" > "${usbGadgetDir}"/functions/ecm.usb0/host_addr
+sleep 1
+
+# Link ECM into c.1 AFTER rndis
+ln -s "${usbGadgetDir}"/functions/ecm.usb0 "${usbGadgetDir}"/configs/c.1
+
 # Bind gadget to the USB device
 printToKmsg "Binding gadget to USB device"
 UDC_DEVICE=$(ls -1 /sys/class/udc/)
