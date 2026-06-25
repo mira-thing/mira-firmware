@@ -25,6 +25,7 @@ COPY resources/ /work/resources/
 COPY scripts/ /work/scripts/
 COPY docker-entrypoint.sh build.sh .build-number /work/
 COPY go-librespot-armv6 ui.zip go-librespot-config.yml lp.env /work/
+COPY voice-artifacts/ /work/voice-artifacts/
 
 WORKDIR /work
 

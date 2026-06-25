@@ -5,6 +5,7 @@
 /go-librespot-armv6
 /go-librespot-config.yml
 /ui.zip
+/voice-artifacts/
 
 # auto-incrementing patch build-number
 /.build-number

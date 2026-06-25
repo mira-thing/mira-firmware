@@ -12,7 +12,7 @@ cp bootloader.dump dtbo_a.dump dtbo_b.dump fip_a.dump fip_b.dump misc.dump vbmet
 # Custom kernel
 CUSTOM_BOOT="$RES_PATH"/kernel/boot_custom.dump
 if [ ! -f "$CUSTOM_BOOT" ]; then
-  color_echo "Missing $CUSTOM_BOOT — build the kernel + boot image first (see the thing-kernel repo)." -Red
+  color_echo "Missing $CUSTOM_BOOT - build the kernel + boot image first (see the thing-kernel repo)." -Red
   exit 1
 fi
 cp "$CUSTOM_BOOT" "$IMAGE_PATH"/boot_a.dump

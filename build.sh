@@ -21,6 +21,7 @@ set -e
 : "${DEFAULT_ROOT_PASSWORD:="thing"}"
 : "${DEFAULT_SERVICES:=""}"
 
+# cap on the partition sizes, we cannot exceed this
 : "${SIZE_ROOT_FS:="516M"}"
 
 : "${STAGES:="00 10 20 30 40"}"

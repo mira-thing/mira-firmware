@@ -14,6 +14,9 @@ prepare:
     cd ../mira-ui && (command -v bun >/dev/null && bun run build || npm run build)
     rm -f ./ui.zip
     cd ../mira-ui/dist && zip -r9 {{justfile_directory()}}/ui.zip .
+    # Voice bundle
+    mkdir -p ./voice-artifacts
+    [ "${BUNDLE_VOICE:-1}" = "0" ] || bash ../mira-vs/collect-artifacts.sh ./voice-artifacts
 
 run: prepare
     sudo ./build.sh
@@ -28,4 +31,4 @@ docker-build: prepare
     docker build -t firmware-builder .
 
 docker-run: docker-build
-    docker run --rm --privileged -v ./output:/work/output firmware-builder:latest
+    docker run --rm --privileged -e BUNDLE_VOICE -v ./output:/work/output firmware-builder:latest
