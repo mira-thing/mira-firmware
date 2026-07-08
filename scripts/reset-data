@@ -12,7 +12,7 @@ if ! grep -q "${PARTITION}" /proc/mounts; then
   mkdir -p ${MOUNT}/cache
   mkdir -p ${MOUNT}/local/etc
   mkdir -p ${MOUNT}/local/root
-  touch ${MOUNT}/local/etc/resolv.conf
+  printf 'options timeout:2\nnameserver 1.1.1.1\nnameserver 8.8.8.8\n' > ${MOUNT}/local/etc/resolv.conf
 
   cp /etc/skel/.bashrc ${MOUNT}/local/root/.bashrc
   cp /etc/skel/.bash_profile ${MOUNT}/local/root/.bash_profile

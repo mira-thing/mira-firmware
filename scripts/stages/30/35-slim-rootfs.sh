@@ -14,5 +14,8 @@ rm -f "$R"/usr/bin/file
 rm -f "$R"/usr/lib/libmagic.so.1 "$R"/usr/lib/libmagic.so.1.0.0
 rm -rf "$R"/var/db/xbps
 rm -rf "$R"/usr/share/i18n
+rm -f "$R"/usr/share/icu/*/icudt*.dat
+rm -f "$R"/usr/lib/libicutest.so* "$R"/usr/lib/libicutu.so* "$R"/usr/lib/libicuio.so*
+rm -rf "$R"/usr/share/info "$R"/usr/share/doc "$R"/usr/share/zsh "$R"/usr/share/bash-completion
 
 color_echo "  Stage 30 - rootfs slimmed for voice" -Green

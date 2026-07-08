@@ -22,6 +22,21 @@ ICS_GRACE=15
 # monotonic seconds since boot
 mono() { awk '{print int($1)}' /proc/uptime 2>/dev/null || echo 0; }
 
+ensure_fallback_dns() {
+  rc=/var/local/etc/resolv.conf
+  grep -q 'nameserver 1\.1\.1\.1' "$rc" 2>/dev/null && return 0
+  keep=$(grep '^nameserver' "$rc" 2>/dev/null | head -n 1)
+  tmp="$rc.new.$$"
+  {
+    echo "options timeout:2"
+    [ -n "$keep" ] && echo "$keep"
+    echo "nameserver 1.1.1.1"
+    echo "nameserver 8.8.8.8"
+  } > "$tmp" && mv "$tmp" "$rc" && echo "dhclient-usb0: ensured public fallback DNS in resolv.conf"
+}
+
+ensure_fallback_dns
+
 # Wait for usb0 to exist
 i=0
 while [ "$i" -lt 60 ]; do
@@ -65,6 +80,7 @@ fi
 
 # carry the counter only across our own bounces
 BOUNCES=0
+LAST_BOUNCE=0
 if [ -f "$BOUNCE_STATE" ]; then
   BOUNCES=$(cut -d' ' -f1 "$BOUNCE_STATE" 2>/dev/null)
   LAST_BOUNCE=$(cut -d' ' -f2 "$BOUNCE_STATE" 2>/dev/null)
@@ -76,9 +92,15 @@ if [ -f "$BOUNCE_STATE" ]; then
   fi
 fi
 
+cat > /run/dhclient.usb0.conf << CONF
+timeout 30;
+retry 30;
+CONF
+
 dhclient -d \
   -pf "$PIDFILE" \
   -lf /run/dhclient.usb0.leases \
+  -cf /run/dhclient.usb0.conf \
   usb0 &
 DHCLIENT_PID=$!
 
@@ -95,8 +117,9 @@ bounce_gadget() {
     return 1
   fi
   BOUNCES=$((BOUNCES + 1))
+  LAST_BOUNCE=$(mono)
   echo "dhclient-usb0: no internet for ${NO_NET_SECS}s with link up, bouncing USB gadget (attempt $BOUNCES/$MAX_BOUNCES)"
-  echo "$BOUNCES $(mono)" > "$BOUNCE_STATE"
+  echo "$BOUNCES $LAST_BOUNCE" > "$BOUNCE_STATE"
   echo "" > "$GADGET_UDC" 2>/dev/null
   sleep 2
   echo "$UDC_DEVICE" > "$GADGET_UDC" 2>/dev/null
@@ -118,6 +141,12 @@ gateway_up() {
 have_internet() {
   ping -c 1 -W 2 1.1.1.1 > /dev/null 2>&1 && return 0
   curl -s -m 3 -o /dev/null http://1.1.1.1 > /dev/null 2>&1
+}
+
+# is a Mac/Linux host connected over CDC ECM (usb1)
+ecm_host_connected() {
+  [ -d /sys/class/net/usb1 ] || return 1
+  [ "$(cat /sys/class/net/usb1/operstate 2>/dev/null)" = "up" ]
 }
 
 # Tear down a previous ICS self-assign so the static 172.16.42.x route becomes the default 
@@ -154,6 +183,8 @@ apply_ics_fallback() {
   if gateway_up; then
     ip route replace default via "$ICS_GW" dev usb0 metric 100 2>/dev/null
     ICS_HOST=$host
+    # no lease -> no dhclient hook -> nothing else writes DNS on this path
+    ensure_fallback_dns
     echo "dhclient-usb0: no DHCP lease but ICS gateway $ICS_GW is up; self-assigned 192.168.137.$host + default route (Windows ICS w/ dead DHCP server)"
     return 0
   fi
@@ -191,6 +222,15 @@ while true; do
   else
     NO_NET_SECS=$((NO_NET_SECS + 5))
 
+    # A Mac/Linux host is connected over ECM (usb1)
+    if ecm_host_connected; then
+      if [ "$ICS_APPLIED" = 1 ]; then
+        revert_ics_fallback
+      fi
+      NO_NET_SECS=0
+      continue
+    fi
+
     # If we self-assigned for ICS but the ICS gateway has since stopped drop the self-assign
     if [ "$ICS_APPLIED" = 1 ] && [ "$NO_NET_SECS" -ge "$ICS_GRACE" ] && ! gateway_up; then
       revert_ics_fallback
@@ -205,6 +245,12 @@ while true; do
         NO_NET_SECS=0
         continue
       fi
+    fi
+
+    if [ "$BOUNCES" -ge "$MAX_BOUNCES" ] && [ $(($(mono) - LAST_BOUNCE)) -gt 300 ]; then
+      echo "dhclient-usb0: bounce budget aged out, re-arming soft-replug"
+      BOUNCES=0
+      echo "0 0" > "$BOUNCE_STATE"
     fi
 
     if [ "$NO_NET_SECS" -ge "$NO_NET_BOUNCE_AFTER" ] && [ "$BOUNCES" -lt "$MAX_BOUNCES" ]; then

@@ -5,15 +5,27 @@
 case "$reason" in
     BOUND|RENEW|REBIND|REBOOT)
         if [ -n "$new_domain_name_servers" ]; then
-            tmp=/var/local/etc/resolv.conf.new
+            # $$-suffixed: two dhclient instances (usb0/usb1) share this hook
+            tmp="/var/local/etc/resolv.conf.new.$$"
             : > "$tmp"
             if [ -n "$new_domain_search" ]; then
                 echo "search $new_domain_search" >> "$tmp"
             elif [ -n "$new_domain_name" ]; then
                 echo "search $new_domain_name" >> "$tmp"
             fi
+            echo "options timeout:2" >> "$tmp"
+            # glibc reads only the first MAXNS=3 nameservers
+            n=0
             for ns in $new_domain_name_servers; do
                 echo "nameserver $ns" >> "$tmp"
+                n=$((n + 1))
+                [ "$n" -ge 2 ] && break
+            done
+            for ns in 1.1.1.1 8.8.8.8; do
+                case " $new_domain_name_servers " in
+                    *" $ns "*) ;;
+                    *) echo "nameserver $ns" >> "$tmp" ;;
+                esac
             done
             mv "$tmp" /var/local/etc/resolv.conf
         fi

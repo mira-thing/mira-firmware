@@ -1,0 +1,64 @@
+#!/bin/sh
+#
+# dhclient-usb1
+#
+# DHCP on the ECM interface (usb1) for Mac/Linux hosts
+
+exec 2>&1
+
+PIDFILE=/run/dhclient.usb1.pid
+
+# wait for usb1 to exist
+i=0
+while [ "$i" -lt 60 ]; do
+  [ -d /sys/class/net/usb1 ] && break
+  sleep 1
+  i=$((i + 1))
+done
+if [ ! -d /sys/class/net/usb1 ]; then
+  echo "dhclient-usb1: usb1 never appeared after 60s, sleeping before restart"
+  sleep 30
+  exit 1
+fi
+
+# wait for carrier
+while [ "$(cat /sys/class/net/usb1/operstate 2>/dev/null)" != "up" ]; do
+  ip link set usb1 up 2>/dev/null
+  sleep 2
+done
+
+echo "dhclient-usb1: ECM carrier up, starting dhclient"
+
+cat > /run/dhclient.usb1.conf << CONF
+timeout 30;
+retry 10;
+CONF
+
+if [ -f "$PIDFILE" ]; then
+  OLD_PID=$(cat "$PIDFILE" 2>/dev/null)
+  [ -n "$OLD_PID" ] && kill "$OLD_PID" 2>/dev/null
+fi
+
+dhclient -d \
+  -pf "$PIDFILE" \
+  -lf /run/dhclient.usb1.leases \
+  -cf /run/dhclient.usb1.conf \
+  usb1 &
+DHCLIENT_PID=$!
+
+trap 'kill "$DHCLIENT_PID" 2>/dev/null; exit 0' TERM INT
+
+while true; do
+  sleep 5
+  if ! kill -0 "$DHCLIENT_PID" 2>/dev/null; then
+    echo "dhclient-usb1: dhclient exited, restarting service"
+    exit 1
+  fi
+  if [ "$(cat /sys/class/net/usb1/operstate 2>/dev/null)" != "up" ]; then
+    echo "dhclient-usb1: usb1 carrier lost, restarting for a fresh DISCOVER"
+    kill "$DHCLIENT_PID" 2>/dev/null
+    wait "$DHCLIENT_PID" 2>/dev/null
+    ip addr flush dev usb1 2>/dev/null
+    exit 1
+  fi
+done

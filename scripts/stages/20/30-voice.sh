@@ -42,6 +42,7 @@ voice:
   lib_dir: "/usr/lib/mira/voice"
   model_dir: "/usr/share/mira/voice/models"
   wake_threshold: 0.4
+  wake_threshold_playing: 0.6
   mic_device: "hw:0,0"
   cascade: true
   espeak_bin: "espeak-ng"

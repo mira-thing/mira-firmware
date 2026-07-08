@@ -20,5 +20,9 @@ done
 if [ "${firstboot}" -eq 1 ]; then
   /sbin/reset-data
   /sbin/reset-settings
-  /usr/bin/uenv set firstboot 0
+  if ! /usr/bin/uenv set firstboot 0; then
+    sleep 1
+    /usr/bin/uenv set firstboot 0 \
+      || echo "firstboot: FAILED to clear firstboot flag; data will be wiped again next boot!" >&2
+  fi
 fi

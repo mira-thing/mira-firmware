@@ -46,5 +46,5 @@ fi
 # Periodic save loop
 while true; do
   sleep "$SAVE_INTERVAL"
-  date +%s > "$SAVED"
+  date +%s > "${SAVED}.tmp" 2>/dev/null && mv -f "${SAVED}.tmp" "$SAVED" 2>/dev/null
 done
