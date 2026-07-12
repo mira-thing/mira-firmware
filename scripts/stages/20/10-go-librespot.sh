@@ -12,6 +12,14 @@ fi
 install -m 0755 "$GLS_BIN" "$ROOTFS_PATH"/usr/sbin/go-librespot
 cp -a "$SCRIPTS_PATH"/services/go-librespot "$ROOTFS_PATH"/etc/sv/
 
+# iAP2 sidecar
+IAP2_BIN="${SAVED_PWD}/iap2-sidecar-armv7"
+if [ -f "$IAP2_BIN" ]; then
+  install -m 0755 "$IAP2_BIN" "$ROOTFS_PATH"/usr/bin/iap2-sidecar
+else
+  color_echo "No ${IAP2_BIN} - building without iPhone volume (run mira-daemon/iap2/build.sh)" -Yellow
+fi
+
 # svlogd writes to this dir from the log/run service script
 mkdir -p "$ROOTFS_PATH"/var/log/go-librespot
 

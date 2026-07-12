@@ -7,6 +7,9 @@ prepare:
     cd ../mira-daemon && ./crosscompile.sh armv6
     cp ../mira-daemon/go-librespot-armv6 ./go-librespot-armv6
     cp ../mira-daemon/config.yml ./go-librespot-config.yml
+    # iAP2 sidecar (iPhone knob-volume); needs `rustup target add armv7-unknown-linux-musleabihf`
+    cd ../mira-daemon && ./iap2/build.sh
+    cp ../mira-daemon/iap2/iap2-sidecar-armv7 ./iap2-sidecar-armv7
     # primary lyrics provider secrets (Musixmatch). gitignored; empty if absent
     # (public builders without it just fall back to lrclib)
     cp ../mira-daemon/.env ./lp.env 2>/dev/null || : > ./lp.env

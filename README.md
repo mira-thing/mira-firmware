@@ -56,6 +56,8 @@ Their builder was itself based on:
 
 The bundled kernel (`resources/kernel/boot_custom.dump`) is built from [`thing-kernel`](../thing-kernel), our fork of Thing Labs' / spsgsb [kernel-common](https://github.com/thinglabsoss) (Amlogic Linux 4.9).
 
+iOS knob-volume is built on [`usenocturne/iap2-rs`](https://github.com/usenocturne/iap2-rs), Nocturne's iAP2 protocol implementation, bundled in [`mira-daemon/iap2/`](https://github.com/mira-thing/mira-daemon)
+
 ## License
 
 This firmware builder is **Apache 2.0**.
