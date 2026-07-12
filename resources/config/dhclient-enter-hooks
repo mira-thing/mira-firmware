@@ -1,0 +1,3 @@
+#!/bin/sh
+# symlink into /var/local
+make_resolv_conf() { : ; }
