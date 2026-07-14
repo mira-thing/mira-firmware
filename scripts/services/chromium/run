@@ -19,4 +19,4 @@ ls -1t "$BREAKPAD_DUMP_LOCATION"/*.dmp 2>/dev/null | tail -n +4 | while read -r 
   rm -f "$f"
 done
 
-exec /usr/bin/chromium-browser/chrome --no-sandbox --in-process-gpu --remote-debugging-port=2222 --user-data-dir=/var/cache/chrome_storage --disk-cache-size=52428800 --kiosk --disable-pinch --allow-file-access-from-files --ignore-certificate-errors --enable-experimental-web-platform-features --app=http://localhost:80 > /dev/null 2>&1
+exec /usr/bin/chromium-browser/chrome --no-sandbox --in-process-gpu --remote-debugging-port=2222 --user-data-dir=/var/cache/chrome_storage --disk-cache-size=52428800 --kiosk --disable-pinch --allow-file-access-from-files --ignore-certificate-errors --enable-experimental-web-platform-features --default-background-color=ff121212 --app=http://localhost:80 > /dev/null 2>&1

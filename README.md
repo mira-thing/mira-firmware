@@ -1,12 +1,12 @@
 # Mira firmware
 
-Custom firmware for the Spotify Car Thing that runs as a standalone Spotify observer + controller. No companion app required.
+Mira firmware builder for the Spotify Car Thing.
 
-Forked from the [usenocturne/nocturne](https://github.com/usenocturne/nocturne) firmware builder, then stripped of the original daemon and rewired around a `go-librespot` observer.
+Part of [Mira](https://github.com/mira-thing)
 
 ## Flashing
 
-Detailed instructions are in the releases repository.
+Prebuilt images and step-by-step flashing instructions live in [mira-releases](https://github.com/mira-thing/mira-releases).
 
 ## Building
 
@@ -36,16 +36,21 @@ Outputs land in `output/`. Or use Docker:
 just docker-run
 ```
 
-## related projects
+## Support
 
-- [`mira-ui/`](../mira-ui) - Vite + React UI
-- [`mira-daemon/`](../mira-daemon) - daemon
-- [`mira-firmware/`](.) - image builder
-- [`thing-kernel/`](../thing-kernel) - patched kernel (rotary-encoder fix), GPL-2.0
+Mira is free and open source. If you'd like to support development, you can do so on [GitHub Sponsors](https://github.com/sponsors/MustakimK) or [Ko-fi](https://ko-fi.com/MustakimK). Questions and updates are on [Discord](https://discord.gg/SR2Pne7EPM).
 
-## Credits
+## Related projects
 
-This firmware builder was forked from [usenocturne/nocturne](https://github.com/usenocturne/nocturne)- credit to Brandon Saldan, shadow, Dominic Frye, and bbaovanc for the original work it builds on
+- [`mira-ui`](https://github.com/mira-thing/mira-ui) - Vite + React UI
+- [`mira-daemon`](https://github.com/mira-thing/mira-daemon) - daemon
+- [`mira-voice`](https://github.com/mira-thing/mira-voice) - on-device voice stack
+- [`mira-releases`](https://github.com/mira-thing/mira-releases) - prebuilt firmware images
+- [`mira-firmware`](.) - image builder (this repo)
+
+## Attributions
+
+This firmware builder was forked from [usenocturne/nocturne](https://github.com/usenocturne/nocturne) - credit to Brandon Saldan, shadow, Dominic Frye, and bbaovanc for the original work it builds on
 
 Their builder was itself based on:
 
@@ -54,14 +59,12 @@ Their builder was itself based on:
 - [bishopdynamics' superbird-tool](https://github.com/bishopdynamics/superbird-tool) and modified [aml-imgpack](https://github.com/bishopdynamics/aml-imgpack)
 - [Thing Labs' superbird-tool fork](https://github.com/thinglabsoss/superbird-tool)
 
-The bundled kernel (`resources/kernel/boot_custom.dump`) is built from [`thing-kernel`](../thing-kernel), our fork of Thing Labs' / spsgsb [kernel-common](https://github.com/thinglabsoss) (Amlogic Linux 4.9).
-
-iOS knob-volume is built on [`usenocturne/iap2-rs`](https://github.com/usenocturne/iap2-rs), Nocturne's iAP2 protocol implementation, bundled in [`mira-daemon/iap2/`](https://github.com/mira-thing/mira-daemon)
+The bundled kernel (`resources/kernel/boot_custom.dump`) is a patched fork of Thing Labs'/spsgsb [kernel-common](https://github.com/thinglabsoss).
 
 ## License
 
 This firmware builder is **Apache 2.0**.
 
-The bundled kernel image is **GPL-2.0** (Linux) — its source and license live in [`thing-kernel`](../thing-kernel), not here.
+The bundled kernel image is **GPL-2.0** (Linux), a patched fork of Thing Labs'/spsgsb kernel-common. The complete corresponding source is available to any third party on request for at least three years from distribution; open an issue on this repo or ask on [Discord](https://discord.gg/SR2Pne7EPM).
 
 > "Spotify" and "Car Thing" are trademarks of Spotify AB. This software is not affiliated with or endorsed by Spotify AB.
