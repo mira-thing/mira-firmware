@@ -7,9 +7,9 @@ prepare:
     cd ../mira-daemon && ./crosscompile.sh armv6
     cp ../mira-daemon/go-librespot-armv6 ./go-librespot-armv6
     cp ../mira-daemon/config.yml ./go-librespot-config.yml
-    # iAP2 sidecar (iPhone knob-volume); needs `rustup target add armv7-unknown-linux-musleabihf`
-    cd ../mira-daemon && ./iap2/build.sh
-    cp ../mira-daemon/iap2/iap2-sidecar-armv7 ./iap2-sidecar-armv7
+    rm -f ./iap2-sidecar-armv7
+    -cd ../mira-daemon && ./iap2/build.sh || echo ">> iap2 sidecar skipped (no rust toolchain?) - building WITHOUT iPhone volume"
+    -cp ../mira-daemon/iap2/iap2-sidecar-armv7 ./iap2-sidecar-armv7 2>/dev/null || true
     # primary lyrics provider secrets (Musixmatch). gitignored; empty if absent
     # (public builders without it just fall back to lrclib)
     cp ../mira-daemon/.env ./lp.env 2>/dev/null || : > ./lp.env
@@ -19,7 +19,7 @@ prepare:
     cd ../mira-ui/dist && zip -r9 {{justfile_directory()}}/ui.zip .
     # Voice bundle
     mkdir -p ./voice-artifacts
-    [ "${BUNDLE_VOICE:-1}" = "0" ] || bash ../mira-vs/collect-artifacts.sh ./voice-artifacts
+    [ "${BUNDLE_VOICE:-1}" = "0" ] || bash ./scripts/get-voice-artifacts.sh ./voice-artifacts
 
 run: prepare
     sudo ./build.sh

@@ -10,7 +10,24 @@ Prebuilt images and step-by-step flashing instructions live in [mira-releases](h
 
 ## Building
 
-You need `curl`, `zip`/`unzip`, `genimage`, `m4`, `xbps-install`, `mkpasswd`, and `patchelf`. `xbps-install` can be installed on any distro from the [Void Linux static binaries](https://docs.voidlinux.org/xbps/troubleshooting/static.html).
+You will need the following as:
+
+related repos in the same parent directory:
+
+```
+git clone https://github.com/mira-thing/mira-daemon
+git clone https://github.com/mira-thing/mira-ui
+git clone https://github.com/mira-thing/mira-voice     # skip with BUNDLE_VOICE=0
+git clone https://github.com/mira-thing/mira-firmware
+```
+
+Toolchains
+- Go
+- `bun` or `npm`
+- `huggingface-cli` or `git-lfs`
+- Rust + `rustup target add armv7-unknown-linux-musleabihf`
+
+Image tools You also need `curl`, `zip`/`unzip`, `genimage`, `m4`, `xbps-install`, `mkpasswd`, and `patchelf`. `xbps-install` can be installed on any distro from the [Void Linux static binaries](https://docs.voidlinux.org/xbps/troubleshooting/static.html).
 
 > Don't blindly extract `xbps-static` to your rootfs, pin the destination. The following has worked:
 >
@@ -34,6 +51,18 @@ Outputs land in `output/`. Or use Docker:
 
 ```
 just docker-run
+```
+
+Don't run these under `sudo`. `sudo` resets `PATH`, so tools installed in your home directory (`cargo`, `rustup`, `bun`) disappear and the build fails with "command not found". If Docker needs root on your machine, add yourself to the `docker` group instead:
+
+```
+sudo usermod -aG docker $USER && newgrp docker
+```
+
+To build without the on-device voice stack (no HuggingFace download, much smaller):
+
+```
+BUNDLE_VOICE=0 just docker-run
 ```
 
 ## Support
