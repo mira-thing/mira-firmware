@@ -32,20 +32,20 @@ jobs:
         if: github.event_name == 'repository_dispatch'
         run: echo "triggered by ${{ github.event.client_payload.repo }}@${{ github.event.client_payload.sha }}"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: mira-firmware
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: mira-thing/mira-daemon
           ref: ${{ github.event.inputs.daemon_ref || 'main' }}
           path: mira-daemon
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: mira-thing/mira-ui
           ref: ${{ github.event.inputs.ui_ref || 'main' }}
           path: mira-ui
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: mira-thing/mira-voice
           path: mira-voice
