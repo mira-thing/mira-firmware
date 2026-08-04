@@ -50,7 +50,7 @@ jobs:
           repository: mira-thing/mira-voice
           path: mira-voice
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: mira-daemon/go.mod
           cache-dependency-path: mira-daemon/go.sum
