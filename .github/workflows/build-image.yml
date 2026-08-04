@@ -98,7 +98,7 @@ jobs:
 
       - name: cache voice artifacts
         if: env.BUNDLE_VOICE != '0'
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: mira-firmware/voice-artifacts
           key: voice-artifacts-${{ hashFiles('mira-voice/fetch-artifacts.sh') }}
