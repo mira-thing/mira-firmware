@@ -5,7 +5,7 @@ set -e
 # Image build config
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Versioning
-: "${IMAGE_VERSION:="v1.0.0"}"
+: "${IMAGE_VERSION:="v1.1.0"}"
 
 : "${VOID_BUILD:="20250202"}"
 : "${STATIC_WEB_SERVER_VERSION:="v2.38.0"}"
