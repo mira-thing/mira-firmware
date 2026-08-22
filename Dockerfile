@@ -1,11 +1,6 @@
 FROM ghcr.io/void-linux/void-glibc:20250801R1
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 
-# https://docs.voidlinux.org/xbps/repositories/mirrors/changing.html
-RUN mkdir -p /etc/xbps.d && \
-    cp /usr/share/xbps.d/*-repository-*.conf /etc/xbps.d/ && \
-    sed -i 's|https://repo-default.voidlinux.org|https://mirrors.servercentral.com/voidlinux|g' /etc/xbps.d/*-repository-*.conf
-
 RUN xbps-install -Suy xbps
 
 RUN xbps-install -uy bash curl dosfstools e2fsprogs findutils util-linux gzip \
