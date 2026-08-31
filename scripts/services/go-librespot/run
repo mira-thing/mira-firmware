@@ -11,6 +11,28 @@ sv check clock_floor > /dev/null 2>&1
 # bluetoothd can register on D-Bus
 sv check bluetooth_adapter > /dev/null 2>&1
 
+# The kernel default advertising interval is 1.28s and BlueZ cannot
+# change it on 4.9. with debugfs we can change it to 100-150ms giving a phone roughly 
+# 10x more chances to see the HID bond
+BT_DEBUGFS=/sys/kernel/debug/bluetooth/hci0
+grep -q " /sys/kernel/debug " /proc/mounts 2>/dev/null || mount -t debugfs none /sys/kernel/debug 2>/dev/null
+i=0
+while [ ! -w "$BT_DEBUGFS/adv_min_interval" ] && [ "$i" -lt 10 ]; do
+  sleep 1
+  i=$((i + 1))
+done
+if [ -w "$BT_DEBUGFS/adv_min_interval" ]; then
+  # units are 0.625ms: 160 = 100ms, 240 = 150ms. min must be written first,
+  # since the kernel rejects a max below the current min
+  if echo 160 > "$BT_DEBUGFS/adv_min_interval" && echo 240 > "$BT_DEBUGFS/adv_max_interval"; then
+    echo "bt: le advertising interval set to 100-150ms"
+  else
+    echo "bt: le advertising interval write rejected, staying at the kernel default"
+  fi
+else
+  echo "bt: $BT_DEBUGFS/adv_min_interval unavailable, le advertising stays at the 1.28s default"
+fi
+
 # NTP gate moved inside the daemon
 CONFIG_DIR="/var/local/etc/go-librespot"
 mkdir -p "$CONFIG_DIR"
