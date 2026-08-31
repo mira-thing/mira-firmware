@@ -4,6 +4,10 @@ Mira firmware builder for the Spotify Car Thing.
 
 Part of [Mira](https://github.com/mira-thing)
 
+## Support
+
+Mira is free and open source. If you'd like to support development, you can do so on [GitHub Sponsors](https://github.com/sponsors/MustakimK) or [Ko-fi](https://ko-fi.com/MustakimK). Sponsors get early access to betas and access to the dev chat, both set up through [Discord](https://discord.gg/SR2Pne7EPM). Every bit genuinely helps and it's what makes this sustainable to keep working on.
+
 ## Flashing
 
 Prebuilt images and step-by-step flashing instructions live in [mira-releases](https://github.com/mira-thing/mira-releases).
@@ -64,10 +68,6 @@ To build without the on-device voice stack (no HuggingFace download, much smalle
 ```
 BUNDLE_VOICE=0 just docker-run
 ```
-
-## Support
-
-Mira is free and open source. If you'd like to support development, you can do so on [GitHub Sponsors](https://github.com/sponsors/MustakimK) or [Ko-fi](https://ko-fi.com/MustakimK). Every bit genuinely helps and it's what makes this sustainable to keep working on. Questions and updates are on [Discord](https://discord.gg/SR2Pne7EPM).
 
 ## Related projects
 
