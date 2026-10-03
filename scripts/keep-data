@@ -1,0 +1,52 @@
+#!/bin/sh
+
+# keeps mira settings data across flashes
+# nonzero = not mira and the caller wipes it instead
+
+PARTITION="/dev/data"
+MOUNT="/mnt"
+
+grep -q "${PARTITION}" /proc/mounts && exit 1
+
+e2fsck -p ${PARTITION} > /dev/null 2>&1
+[ $? -ge 4 ] && exit 1
+
+mount -t ext4 -o rw ${PARTITION} ${MOUNT} || exit 1
+
+# anyting before 1.2.1 never wrote the marker but mira ships this config so we can still check
+if [ ! -f ${MOUNT}/local/mira/data-version ] \
+  && ! grep -qs "mira-thing" ${MOUNT}/local/etc/go-librespot/config.yml; then
+  umount ${MOUNT}
+  exit 1
+fi
+
+# go-librespot/run copies the new images config back in
+rm -f ${MOUNT}/local/etc/go-librespot/config.yml
+
+rm -rf ${MOUNT}/cache/fontconfig
+(cd /var && find . -mindepth 1 -exec sh -c '[ -e "$2/$1" ] || [ -L "$2/$1" ] || cp -a "$1" "$2/$1"' _ {} ${MOUNT} \;)
+
+mkdir -p ${MOUNT}/cache ${MOUNT}/local/etc/ssh ${MOUNT}/local/root ${MOUNT}/local/mira
+[ -f ${MOUNT}/local/etc/resolv.conf ] \
+  || printf 'options timeout:2\nnameserver 1.1.1.1\nnameserver 8.8.8.8\n' > ${MOUNT}/local/etc/resolv.conf
+cp -n /etc/skel/.bashrc /etc/skel/.bash_profile ${MOUNT}/local/root/
+ssh-keygen -A -f ${MOUNT}/local
+cp /etc/sshd_config ${MOUNT}/local/etc/ssh/sshd_config
+
+if [ ! -f ${MOUNT}/swapfile ]; then
+  fallocate -l 256M ${MOUNT}/swapfile
+  chmod 600 ${MOUNT}/swapfile
+  mkswap ${MOUNT}/swapfile
+fi
+
+# the old firmwares problems are reset
+rm -f ${MOUNT}/local/mira/problems.json
+
+echo 1 > ${MOUNT}/local/mira/data-version
+cat /proc/sys/kernel/random/uuid > ${MOUNT}/local/mira/flash_id
+
+sync
+
+umount ${MOUNT}
+
+echo "${PARTITION} was kept."
