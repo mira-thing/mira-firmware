@@ -17,9 +17,21 @@ for i in $(cat /proc/cmdline); do
   esac
 done
 
-if [ "${firstboot}" -eq 1 ]; then
-  /sbin/reset-data
-  /sbin/reset-settings
+# 1 = factory reset. 2 = keep mira data
+case "${firstboot}" in
+  1)
+    /sbin/reset-data
+    /sbin/reset-settings
+    ;;
+  2)
+    if ! /sbin/keep-data; then
+      /sbin/reset-data
+      /sbin/reset-settings
+    fi
+    ;;
+esac
+
+if [ "${firstboot}" != 0 ]; then
   if ! /usr/bin/uenv set firstboot 0; then
     sleep 1
     /usr/bin/uenv set firstboot 0 \
