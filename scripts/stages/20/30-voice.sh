@@ -12,6 +12,12 @@ if [ ! -d "$VA" ]; then
   exit 1
 fi
 
+# is it a stale bundle without the memory fix
+if ! grep -qa "zipformer/ort.conf" "$VA/bin/sherpa_asr_server" || [ ! -f "$VA/zipformer/ort.conf" ]; then
+  color_echo "Stale voice bundle in ${VA} (sherpa_asr_server/ort.conf predate the arena fix). Rerun 'just prepare'." -Red
+  exit 1
+fi
+
 # rootfs locations
 VLIB="$ROOTFS_PATH/usr/lib/mira/voice" 
 VSHARE="$ROOTFS_PATH/usr/share/mira/voice"
