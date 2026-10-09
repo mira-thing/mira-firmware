@@ -9,7 +9,9 @@ MOUNT="/mnt"
 grep -q "${PARTITION}" /proc/mounts && exit 1
 
 e2fsck -p ${PARTITION} > /dev/null 2>&1
-[ $? -ge 4 ] && exit 1
+rc=$?
+[ $rc -ge 4 ] && { e2fsck -y ${PARTITION} > /dev/null 2>&1; rc=$?; }
+[ $rc -ge 4 ] && exit 1
 
 mount -t ext4 -o rw ${PARTITION} ${MOUNT} || exit 1
 
@@ -19,6 +21,19 @@ if [ ! -f ${MOUNT}/local/mira/data-version ] \
   umount ${MOUNT}
   exit 1
 fi
+
+case "$(cat ${MOUNT}/local/mira/data-version 2>/dev/null)" in
+  '' | 1) ;;
+  *)
+    umount ${MOUNT}
+    exit 1
+    ;;
+esac
+
+# marker so a power cut past here keeps the data instead of wiping it
+mkdir -p ${MOUNT}/local/mira
+echo 1 > ${MOUNT}/local/mira/data-version
+sync
 
 # go-librespot/run copies the new images config back in
 rm -f ${MOUNT}/local/etc/go-librespot/config.yml
@@ -42,7 +57,6 @@ fi
 # the old firmwares problems are reset
 rm -f ${MOUNT}/local/mira/problems.json
 
-echo 1 > ${MOUNT}/local/mira/data-version
 cat /proc/sys/kernel/random/uuid > ${MOUNT}/local/mira/flash_id
 
 sync
