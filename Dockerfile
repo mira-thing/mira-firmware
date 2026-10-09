@@ -1,7 +1,7 @@
 FROM ghcr.io/void-linux/void-glibc:20250801R1
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 
-RUN xbps-install -Suy xbps
+RUN xbps-install -Suy xbps && xbps-install -uy
 
 RUN xbps-install -uy bash curl dosfstools e2fsprogs findutils util-linux gzip \
     git m4 mtools pigz tar zstd xz zip mkpasswd zip unzip just rsync \
