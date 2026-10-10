@@ -21,6 +21,10 @@ if ! grep -q "${PARTITION}" /proc/mounts; then
   ssh-keygen -A -f ${MOUNT}/local
   cp /etc/sshd_config ${MOUNT}/local/etc/ssh/sshd_config
 
+  mkdir -p ${MOUNT}/local/mira
+  echo 1 > ${MOUNT}/local/mira/data-version
+  cat /proc/sys/kernel/random/uuid > ${MOUNT}/local/mira/flash_id
+
   fallocate -l 256M ${MOUNT}/swapfile
   mkswap ${MOUNT}/swapfile
   chmod 600 ${MOUNT}/swapfile
