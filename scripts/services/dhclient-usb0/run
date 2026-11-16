@@ -137,10 +137,32 @@ gateway_up() {
   ping -c 1 -W 2 "$ICS_GW" > /dev/null 2>&1
 }
 
-# Do we actually have internet? ICMP first -> fall back to a TCP/80
+EXTERNAL_PROBE_INTERVAL=60
+LAST_EXTERNAL_PROBE=0
+
+# Passive local check: verify usb0 interface state and route/IP to avoid
+# spamming outbound ICMP packets across the USB NDIS bridge.
 have_internet() {
-  ping -c 1 -W 2 1.1.1.1 > /dev/null 2>&1 && return 0
-  curl -s -m 3 -o /dev/null http://1.1.1.1 > /dev/null 2>&1
+  # 1. Passive local interface check: usb0 operstate and link state
+  [ "$(cat /sys/class/net/usb0/operstate 2>/dev/null)" = "up" ] || return 1
+  ip link show usb0 2>/dev/null | grep -q "state UP" || return 1
+
+  # 2. Passive routing/IP check: must have a default route or assigned IPv4 address
+  if ! ip route show dev usb0 2>/dev/null | grep -q "default" && \
+     ! ip addr show dev usb0 2>/dev/null | grep -q "inet "; then
+    return 1
+  fi
+
+  # 3. Throttle external probe to at least 60-120s to stop winnat.sys DPC stalls
+  NOW=$(mono)
+  if [ $((NOW - LAST_EXTERNAL_PROBE)) -lt "$EXTERNAL_PROBE_INTERVAL" ]; then
+    return 0
+  fi
+  LAST_EXTERNAL_PROBE=$NOW
+
+  # Infrequent external reachability verification (HTTP first, fallback to ping)
+  curl -s -m 3 -o /dev/null http://1.1.1.1 > /dev/null 2>&1 && return 0
+  ping -c 1 -W 2 1.1.1.1 > /dev/null 2>&1
 }
 
 # is a Mac/Linux host connected over CDC ECM (usb1)
