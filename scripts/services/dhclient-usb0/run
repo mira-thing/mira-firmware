@@ -139,6 +139,7 @@ gateway_up() {
 
 EXTERNAL_PROBE_INTERVAL=60
 LAST_EXTERNAL_PROBE=0
+LAST_EXTERNAL_STATUS=1
 
 # Passive local check: verify usb0 interface state and route/IP to avoid
 # spamming outbound ICMP packets across the USB NDIS bridge.
@@ -155,14 +156,19 @@ have_internet() {
 
   # 3. Throttle external probe to at least 60-120s to stop winnat.sys DPC stalls
   NOW=$(mono)
-  if [ $((NOW - LAST_EXTERNAL_PROBE)) -lt "$EXTERNAL_PROBE_INTERVAL" ]; then
-    return 0
+  if [ "$LAST_EXTERNAL_PROBE" -ne 0 ] && [ $((NOW - LAST_EXTERNAL_PROBE)) -lt "$EXTERNAL_PROBE_INTERVAL" ]; then
+    return "$LAST_EXTERNAL_STATUS"
   fi
   LAST_EXTERNAL_PROBE=$NOW
 
   # Infrequent external reachability verification (HTTP first, fallback to ping)
-  curl -s -m 3 -o /dev/null http://1.1.1.1 > /dev/null 2>&1 && return 0
-  ping -c 1 -W 2 1.1.1.1 > /dev/null 2>&1
+  if curl -s -m 3 -o /dev/null http://1.1.1.1 > /dev/null 2>&1 || ping -c 1 -W 2 1.1.1.1 > /dev/null 2>&1; then
+    LAST_EXTERNAL_STATUS=0
+    return 0
+  else
+    LAST_EXTERNAL_STATUS=1
+    return 1
+  fi
 }
 
 # is a Mac/Linux host connected over CDC ECM (usb1)
