@@ -1,0 +1,13 @@
+Mira Firmware
+Copyright 2026 Mustakim Kazi & Mira-Thing Contributors
+
+This product includes software developed as part of Mira
+(https://github.com/mira-thing).
+
+Portions are derived from Nocturne (https://github.com/usenocturne/nocturne)
+by Brandon Saldan, shadow, Dominic Frye and bbaovanc, which was itself based
+on raspi-alpine/builder (https://gitlab.com/raspi-alpine/builder),
+Copyright 2021 Benjamin Böhmke and Duncan Bellamy.
+
+The bundled kernel image (resources/kernel/boot_custom.dump) is licensed
+under GPL-2.0, not Apache-2.0; see README.md for source availability.
